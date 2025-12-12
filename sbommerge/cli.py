@@ -71,7 +71,18 @@ def main():
         logger.setLevel(logging.DEBUG)
 
     # Validate CLI parameters
-    if args.FILE1 != args.FILE2:
+    if args.FILE1 == args.FILE2:
+        logger.error("Must specify different filenames.")
+        exit(-1)
+
+    if not Path(args.FILE1).exists():
+        logger.error(f"{args.FILE1} does not exist")
+        exit(-1)
+
+    if not Path(args.FILE2).exists():
+        logger.error(f"{args.FILE2} does not exist")
+        exit(-1)
+
         # Check both files exist
         file_found = True
         if not Path(args.FILE1).exists():

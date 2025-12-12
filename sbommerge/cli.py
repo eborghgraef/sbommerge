@@ -1,11 +1,9 @@
 # Copyright (C) 2022 Anthony Harrison
 # SPDX-License-Identifier: Apache-2.0
 
-import argparse
-import pathlib
-import sys
-import textwrap
+from argparse import ArgumentParser
 from pathlib import Path
+from sys import exit, stderr
 
 from lib4sbom.data.file import SBOMFile
 from lib4sbom.data.package import SBOMPackage
@@ -69,10 +67,10 @@ def main():
     if args.FILE1 != args.FILE2:
         # Check both files exist
         file_found = True
-        if not pathlib.Path(args.FILE1).exists():
+        if not Path(args.FILE1).exists():
             print(f"{args.FILE1} does not exist")
             file_found = False
-        if not pathlib.Path(args.FILE2).exists():
+        if not Path(args.FILE2).exists():
             print(f"{args.FILE2} does not exist")
             file_found = False
         if not file_found:
@@ -331,11 +329,11 @@ def main():
         print("SBOM File2 - packages", len(packages2))
         print("SBOM File2 - relationships", len(relationship2))
 
-    print("\nSummary\n-------", file=sys.stderr)
-    print(f"No change:  {identical_info}", file=sys.stderr)
-    print(f"Updated:    {updated_info}", file=sys.stderr)
-    print(f"New:        {additional_info}", file=sys.stderr)
-    print(f"Merged:     {merged_info}\n", file=sys.stderr)
+    print("\nSummary\n-------", file=stderr)
+    print(f"No change:  {identical_info}", file=stderr)
+    print(f"Updated:    {updated_info}", file=stderr)
+    print(f"New:        {additional_info}", file=stderr)
+    print(f"Merged:     {merged_info}\n", file=stderr)
 
     # Generate SBOM file
 
@@ -363,4 +361,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    exit(main())

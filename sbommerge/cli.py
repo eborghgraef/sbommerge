@@ -17,18 +17,12 @@ from lib4sbom.sbom import SBOM
 from sbommerge.version import VERSION
 
 APP_NAME = "sbommerge"
+APP_DESCRIPTION = """ SBOMMerge merges two Software Bill of Materials (SBOMs)
+                      documents together."""
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(
-        prog=APP_NAME,
-        description=textwrap.dedent(
-            """
-            SBOMMerge merges two Software Bill of Materials (SBOMs)
-            documents together.
-            """
-        ),
-    )
+    parser = ArgumentParser(prog=APP_NAME, description=APP_DESCRIPTION)
     parser.add_argument(
         "-d",
         "--debug",

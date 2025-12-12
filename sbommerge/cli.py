@@ -17,15 +17,12 @@ from lib4sbom.sbom import SBOM
 
 from sbommerge.version import VERSION
 
-# CLI processing
+APP_NAME = "sbommerge"
 
 
-def main(argv=None):
-
-    argv = argv or sys.argv
-    app_name = "sbommerge"
+def parse_arguments():
     parser = argparse.ArgumentParser(
-        prog=app_name,
+        prog=APP_NAME,
         description=textwrap.dedent(
             """
             SBOMMerge merges two Software Bill of Materials (SBOMs)
@@ -33,32 +30,32 @@ def main(argv=None):
             """
         ),
     )
+    parser.add_argument(
+        "-d",
+        "--debug",
+        action="store_true",
+        help="show debug information",
+    )
+    parser.add_argument("-v", "--version", action="version", version=VERSION)
+    parser.add_argument("FILE1", help="first SBOM file")
+    parser.add_argument("FILE2", help="second SBOM file")
+
     input_group = parser.add_argument_group("Input")
     input_group.add_argument(
         "--sbom",
-        action="store",
         default="auto",
         choices=["auto", "spdx", "cyclonedx"],
         help="specify type of sbom to merge (default: auto)",
     )
     output_group = parser.add_argument_group("Output")
     output_group.add_argument(
-        "-d",
-        "--debug",
-        action="store_true",
-        default=False,
-        help="show debug information",
-    )
-    output_group.add_argument(
         "--format",
-        action="store",
         default="tag",
         choices=["tag", "json", "yaml"],
         help="specify format of generated sbom (default: tag)",
     )
     output_group.add_argument(
         "--sbom-type",
-        action="store",
         default="spdx",
         choices=["spdx", "cyclonedx"],
         help="specify type of sbom to merge (default: spdx)",
@@ -66,15 +63,13 @@ def main(argv=None):
     output_group.add_argument(
         "-o",
         "--output-file",
-        action="store",
         default="",
         help="output filename (default: output to stdout)",
     )
-    parser.add_argument("-V", "--version", action="version", version=VERSION)
+    return parser.parse_args()
 
-    parser.add_argument("FILE1", help="first SBOM file")
-    parser.add_argument("FILE2", help="second SBOM file")
 
+def main():
     defaults = {
         "output_file": "",
         "sbom": "auto",
@@ -82,7 +77,8 @@ def main(argv=None):
         "sbom_type": "spdx",
         "debug": False,
     }
-    raw_args = parser.parse_args(argv[1:])
+
+    raw_args = parse_arguments()
     args = {key: value for key, value in vars(raw_args).items() if value}
     args = ChainMap(args, defaults)
 
@@ -118,11 +114,11 @@ def main(argv=None):
     relationship2 = parser.get_relationships()
     file2_type = parser.get_type()
     if args["debug"]:
-        print(f'File {args["FILE1"]} - {file1_type}')
+        print(f"File {args['FILE1']} - {file1_type}")
         print(f"Files: {files1}")
         print(f"Packages: {packages1}")
         print(f"Relationships {relationship1}")
-        print(f'File {args["FILE2"]} - {file2_type}')
+        print(f"File {args['FILE2']} - {file2_type}")
         print(f"Files: {files2}")
         print(f"Packages: {packages2}")
         print(f"Relationships {relationship2}")
@@ -201,7 +197,7 @@ def main(argv=None):
 
     # Create root package
     sbom_package.initialise()
-    root_package = f'MERGETOOL-{Path(args["FILE1"]).name.replace(".","-")}-{Path(args["FILE2"]).name.replace(".","-")}'
+    root_package = f"MERGETOOL-{Path(args['FILE1']).name.replace('.', '-')}-{Path(args['FILE2']).name.replace('.', '-')}"
     parent = f"SBOM-{root_package}"
     sbom_package.set_name(root_package)
     sbom_package.set_type("application")
@@ -212,9 +208,9 @@ def main(argv=None):
     sbom_package.set_licenseconcluded(license)
     sbom_package.set_supplier("UNKNOWN", "NOASSERTION")
     # Store package data
-    packages[
-        (sbom_package.get_name(), sbom_package.get_value("version"))
-    ] = sbom_package.get_package()
+    packages[(sbom_package.get_name(), sbom_package.get_value("version"))] = (
+        sbom_package.get_package()
+    )
     sbom_relationship.initialise()
     sbom_relationship.set_relationship(parent, "DESCRIBES", root_package)
     relationships.append(sbom_relationship.get_relationship())
@@ -224,7 +220,11 @@ def main(argv=None):
             # If package version differ, don't merge
             for package2 in packages2:
                 if package2["name"] == package["name"]:
-                    if "version" in package.keys() and "version" in package2.keys() and package["version"] != package2["version"]:
+                    if (
+                        "version" in package.keys()
+                        and "version" in package2.keys()
+                        and package["version"] != package2["version"]
+                    ):
                         print(
                             f"[ERROR] Version mismatch for"
                             f" {package['name']}"
@@ -264,9 +264,9 @@ def main(argv=None):
                 print(package["name"], "UNIQUE 12")
             sbom_package.copy_package(package)
             merged_info += 1
-        packages[
-            (sbom_package.get_name(), sbom_package.get_value("version"))
-        ] = sbom_package.get_package()
+        packages[(sbom_package.get_name(), sbom_package.get_value("version"))] = (
+            sbom_package.get_package()
+        )
     for package in packages2:
         sbom_package.initialise()
         if package not in packages1:
@@ -274,9 +274,9 @@ def main(argv=None):
                 print(package["name"], "UNIQUE 2")
             sbom_package.copy_package(package)
             merged_info += 1
-            packages[
-                (sbom_package.get_name(), sbom_package.get_value("version"))
-            ] = sbom_package.get_package()
+            packages[(sbom_package.get_name(), sbom_package.get_value("version"))] = (
+                sbom_package.get_package()
+            )
     # Now process relationships
     for r in relationship1:
         source = None
@@ -364,7 +364,7 @@ def main(argv=None):
         print(merge_sbom.get_sbom())
 
     sbom_gen = SBOMGenerator(
-        sbom_type=bom_format, format=sbom_format, application=app_name, version=VERSION
+        sbom_type=bom_format, format=sbom_format, application=APP_NAME, version=VERSION
     )
     sbom_gen.generate(
         project_name=parent,

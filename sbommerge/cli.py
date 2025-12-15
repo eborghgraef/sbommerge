@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import logging
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from sys import exit, stderr
 
@@ -19,16 +19,18 @@ APP_NAME = "sbommerge"
 APP_DESCRIPTION = """ SBOMMerge merges two Software Bill of Materials (SBOMs)
                       documents together."""
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
+logging.basicConfig(format="%(message)s")
 logger = logging.getLogger(APP_NAME)
 
 
-def parse_arguments():
+def create_argument_parser() -> ArgumentParser:
     parser = ArgumentParser(prog=APP_NAME, description=APP_DESCRIPTION)
     parser.add_argument(
         "-d",
         "--debug",
-        action="store_true",
+        action="store_const",
+        const=logging.DEBUG,
+        default=logging.INFO,
         help="show debug information",
     )
     parser.add_argument("-v", "--version", action="version", version=VERSION)
@@ -61,42 +63,32 @@ def parse_arguments():
         default="",
         help="output filename (default: output to stdout)",
     )
-    return parser.parse_args()
+    return parser
 
-
-def main():
-    args = parse_arguments()
-
-    if args.debug:
-        logger.setLevel(logging.DEBUG)
-
-    # Validate CLI parameters
+def validate_arguments(args) -> bool:
     if args.FILE1 == args.FILE2:
         logger.error("Must specify different filenames.")
-        exit(-1)
+        return False
 
     if not Path(args.FILE1).exists():
         logger.error(f"{args.FILE1} does not exist")
-        exit(-1)
+        return False
 
     if not Path(args.FILE2).exists():
         logger.error(f"{args.FILE2} does not exist")
-        exit(-1)
+        return False
 
-        # Check both files exist
-        file_found = True
-        if not Path(args.FILE1).exists():
-            logger.info(f"{args.FILE1} does not exist")
-            file_found = False
-        if not Path(args.FILE2).exists():
-            logger.info(f"{args.FILE2} does not exist")
-            file_found = False
-        if not file_found:
-            return -1
-    else:
-        # Same filename specified
-        logger.info("Must specify different filenames.")
-        return -1
+    return True
+
+def set_log_level(args:Namespace):
+    logger.setLevel(args.debug)
+
+def main():
+    parser = create_argument_parser()
+    args = parser.parse_args()
+    if not validate_arguments(args):
+        exit(-1)
+    set_log_level(args)
 
     parser = SBOMParser(args.sbom)
     parser.parse_file(args.FILE1)
